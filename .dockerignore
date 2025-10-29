@@ -1,0 +1,24 @@
+# Environnements Python
+.venv/
+api/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Git / IDE / OS
+.git/
+.gitignore
+.vscode/
+.claude/
+.DS_Store
+**/.DS_Store
+
+# Data : montée en volume dans docker-compose, pas copiée dans l'image
+data/
+
+# Fichiers inutiles au runtime
+docs/
+frontend/
+docker-compose.yml
+.dockerignore
+README.md

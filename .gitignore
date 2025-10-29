@@ -1,0 +1,27 @@
+# Virtual environments
+.venv/
+venv/
+api/venv/
+ENV/
+env/
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and Editor files
+.vscode/
+.idea/
+.DS_Store
+
+# Local configuration
+.env
+.env.local
+
+# Data files (raw/bronze)
+data/bronze/*.csv
+!data/bronze/dvf.csv
+
+# Keep directory structure
+!.gitkeep
