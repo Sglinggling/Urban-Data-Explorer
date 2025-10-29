@@ -1,1 +1,21 @@
-.
+# 1. Ignorer les données
+# On ne veut jamais commiter les données brutes ou transformées
+data/bronze/
+data/silver/
+data/gold/
+
+# 2. Ignorer les environnements et dépendances Python
+# (ils sont spécifiques à chaque machine)
+.venv/
+venv/
+**/__pycache__/
+
+# 3. Ignorer les dépendances Frontend
+# (le dossier node_modules peut contenir des milliers de fichiers)
+frontend/node_modules/
+
+# 4. Ignorer les fichiers de secrets
+# (clés d'API, mots de passe, etc.)
+.env
+*.env
+config.ini
