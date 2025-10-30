@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://opendata.paris.fr/explore/dataset/logements-sociaux-finances-a-paris/export/?disjunctive.bs&disjunctive.mode_real&disjunctive.nature_programme&disjunctive.ville&disjunctive.code_postal
+HostUrl=https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/logements-sociaux-finances-a-paris/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B
