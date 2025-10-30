@@ -13,13 +13,12 @@ Il génère :
 
 Entrées attendues (BRONZE) :
 - data/bronze/dvf.csv
-- data/bronze/logements-sociaux-finances-a-paris.xlsx
+- data/bronze/logements-sociaux-finances-a-paris.csv
 """
 
 import pandas as pd
 import numpy as np
 from pathlib import Path
-
 
 # --- Dossiers ---
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +26,7 @@ BRONZE = ROOT / "data" / "bronze"
 SILVER = ROOT / "data" / "silver"
 
 DVF_CSV = BRONZE / "dvf.csv"
-LS_XLSX = BRONZE / "logements-sociaux-finances-a-paris.xlsx"
+LS_CSV = BRONZE / "logements-sociaux-finances-a-paris.csv"
 
 
 def ensure_dirs():
@@ -35,12 +34,13 @@ def ensure_dirs():
     SILVER.mkdir(parents=True, exist_ok=True)
 
 
+# ---------- 1. DVF -> SILVER ----------
 def build_silver_dvf(src: Path, out_path: Path) -> pd.DataFrame:
     """Nettoie le fichier DVF pour ne garder que les ventes résidentielles à Paris."""
 
     print(f"Lecture du fichier DVF : {src}")
 
-    # --- Lecture sûre : on teste le bon séparateur ---
+    # Lecture du CSV avec détection de séparateur
     try:
         df = pd.read_csv(src, sep=";", low_memory=False)
         if "valeur_fonciere" not in df.columns:
@@ -48,49 +48,47 @@ def build_silver_dvf(src: Path, out_path: Path) -> pd.DataFrame:
     except Exception as e:
         raise RuntimeError(f"Impossible de lire {src}: {e}")
 
-    # --- Nettoyage de base ---
+    # Supprimer lignes vides ou doublons d’en-têtes
     df = df.dropna(how="all")
-    df = df[df["valeur_fonciere"] != "valeur_fonciere"]  # enlève lignes doublon d'en-tête
+    df = df[df["valeur_fonciere"] != "valeur_fonciere"]
 
-    # --- Conversion types ---
-    num_cols = ["valeur_fonciere", "surface_reelle_bati", "nombre_pieces_principales"]
-    for col in num_cols:
+    # Conversion des nombres
+    for col in ["valeur_fonciere", "surface_reelle_bati", "nombre_pieces_principales"]:
         if col in df.columns:
             df[col] = (
-                df[col]
-                .astype(str)
+                df[col].astype(str)
                 .str.replace(",", ".", regex=False)
                 .str.replace(" ", "", regex=False)
             )
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # --- Filtre Paris ---
+    # Filtrer Paris (75001 à 75020)
     df = df[df["code_postal"].astype(str).str.match(r"750(0[1-9]|1[0-9]|20)", na=False)]
     df["arrondissement"] = df["code_postal"].astype(str).str[-2:].astype(int)
 
-    # --- Date / année ---
+    # Date et année
     df["date_mutation"] = pd.to_datetime(df["date_mutation"], errors="coerce")
     df["annee"] = df["date_mutation"].dt.year
 
-    # --- Filtres métier ---
+    # Garde ventes résidentielles
     df = df[df["nature_mutation"].isin(["Vente", "Vente en l'état futur d'achèvement"])]
     df = df[df["type_local"].isin(["Appartement", "Maison"])]
 
-    # --- Calcul prix/m² ---
+    # Prix/m² et nettoyage des outliers
     df["prix_m2"] = df["valeur_fonciere"] / df["surface_reelle_bati"]
     df = df[
         (df["prix_m2"].between(500, 30000))
         & (df["surface_reelle_bati"].between(8, 1000))
     ]
 
-    # --- Typologie ---
+    # Typologie
     df["typologie"] = pd.cut(
         df["nombre_pieces_principales"],
         bins=[-1, 1, 2, 3, 4, 100],
         labels=["T1", "T2", "T3", "T4", "T5+"],
     )
 
-    # --- Colonnes utiles finales ---
+    # Colonnes finales
     cols = [
         "id_mutation",
         "date_mutation",
@@ -108,17 +106,24 @@ def build_silver_dvf(src: Path, out_path: Path) -> pd.DataFrame:
     ]
     df = df[[c for c in cols if c in df.columns]]
 
-    # --- Sauvegarde ---
     df.to_csv(out_path, index=False)
     print(f"✅ {len(df):,} lignes nettoyées → {out_path}")
     return df
 
+
 # ---------- 2. Logements sociaux -> SILVER ----------
 def build_silver_logements_sociaux(src: Path, out_prog: Path, out_agg: Path):
-    """Nettoie les logements sociaux et crée une version agrégée (arrondissement / année)."""
+    """Nettoie les logements sociaux depuis le CSV et crée une version agrégée (arrondissement / année)."""
 
     print(f"Lecture du fichier logements sociaux : {src}")
-    df = pd.read_excel(src)
+
+    # Lecture CSV (détection du séparateur)
+    try:
+        df = pd.read_csv(src, sep=";", low_memory=False)
+        if "Année du financement - agrément" not in df.columns:
+            df = pd.read_csv(src, sep=",", low_memory=False)
+    except Exception as e:
+        raise RuntimeError(f"Impossible de lire {src}: {e}")
 
     # Renommage des colonnes
     rename = {
@@ -138,21 +143,22 @@ def build_silver_logements_sociaux(src: Path, out_prog: Path, out_agg: Path):
     }
     df.rename(columns={k: v for k, v in rename.items() if k in df.columns}, inplace=True)
 
-    # Garder seulement Paris
-    df = df[df["code_postal"].astype(str).str.match(r"750(0[1-9]|1[0-9]|20)", na=False)]
-    df["arrondissement"] = df["code_postal"].str[-2:].astype(int)
+    # Garder Paris uniquement
+    if "code_postal" in df.columns:
+        df = df[df["code_postal"].astype(str).str.match(r"750(0[1-9]|1[0-9]|20)", na=False)]
+        df["arrondissement"] = df["code_postal"].astype(str).str[-2:].astype(int)
 
-    # Conversion des nombres
+    # Conversion numérique
     numeric_cols = ["annee", "arrondissement", "nb_total", "nb_plai", "nb_plus", "nb_plus_cd", "nb_pls"]
     for c in numeric_cols:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    # Export des programmes détaillés
+    # Export programmes détaillés
     df.to_csv(out_prog, index=False)
-    print(f"✅ {len(df):,} programmes sauvegardéss dans {out_prog}")
+    print(f"✅ {len(df):,} programmes sauvegardés dans {out_prog}")
 
-    # Agrégat (arrondissement / année)
+    # Agrégat arrondissement / année
     agg = (
         df.groupby(["arrondissement", "annee"], dropna=True)
         [["nb_total", "nb_plai", "nb_plus", "nb_plus_cd", "nb_pls"]]
@@ -160,7 +166,6 @@ def build_silver_logements_sociaux(src: Path, out_prog: Path, out_agg: Path):
         .reset_index()
         .sort_values(["annee", "arrondissement"])
     )
-
     agg.to_csv(out_agg, index=False)
     print(f"✅ {len(agg):,} lignes agrégées sauvegardées dans {out_agg}")
 
@@ -179,7 +184,7 @@ def main():
     build_silver_dvf(DVF_CSV, dvf_out)
 
     print("\n=== Nettoyage Logements Sociaux ===")
-    build_silver_logements_sociaux(LS_XLSX, prog_out, agg_out)
+    build_silver_logements_sociaux(LS_CSV, prog_out, agg_out)
 
     print("\n✅ Toutes les tables SILVER ont été générées avec succès.")
 
