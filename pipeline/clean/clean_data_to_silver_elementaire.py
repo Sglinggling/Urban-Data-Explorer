@@ -1,41 +1,54 @@
 import re
 from pathlib import Path
-import pandas as pd  # type: ignore
 
-def clean_elementaires(
-    src: str | Path = "data/bronze/etablissements-scolaires-ecoles-elementaires.csv",
-    dst: str | Path = "data/silver/ecoles_elementaires_clean.csv",
-) -> Path:
-    src, dst = Path(src), Path(dst)
-    dst.parent.mkdir(parents=True, exist_ok=True)
+import pandas as pd
 
-    df = pd.read_csv(src, sep=";", engine="python", dtype=str, low_memory=False)
 
-    required = ["Libellé établissement", "Arrondissement", "Code INSEE"]
+def clean_elementaires(src_path, dst_path):
+    src_path = Path(src_path)
+    dst_path = Path(dst_path)
+    dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"[ELEMENTAIRES] Lecture: {src_path}")
+    try:
+        # Lecture CSV avec détection du séparateur
+        df = pd.read_csv(src_path, sep=";", dtype=str, low_memory=False)
+        if not any(c in df.columns for c in ["libelle", "arr_insee"]):
+            df = pd.read_csv(src_path, sep=",", dtype=str, low_memory=False)
+    except Exception as e:
+        raise RuntimeError(f"Lecture CSV échouée pour {src_path}: {e}")
+
+    # Vérification des colonnes
+    required = ["libelle", "arr_libelle", "arr_insee"]
     missing = [c for c in required if c not in df.columns]
     if missing:
-        raise ValueError(f"Colonnes manquantes: {missing}\nColonnes vues: {list(df.columns)}")
+        raise ValueError(f"Colonnes manquantes: {missing}\nColonnes trouvées: {list(df.columns)}")
 
+    # Nettoyage
     df = df[required].drop_duplicates()
 
-    def to_arr_num(row):
-        code = str(row["Code INSEE"]) if pd.notna(row["Code INSEE"]) else ""
-        m = re.search(r"751(\d{2})", code)
-        if m:
-            return int(m.group(1))
-        al = str(row["Arrondissement"])
-        m2 = re.search(r"(\d{1,2})", al)
-        return int(m2.group(1)) if m2 else None
+    # Extraction du numéro d’arrondissement à partir du code INSEE
+    df["arr_insee"] = df["arr_insee"].astype(str)
+    df["arr_libelle"] = df["arr_libelle"].astype(str)
 
-    df["arr_num"] = df.apply(to_arr_num, axis=1)
-    df = df[df["arr_num"].between(1, 20)]
+    df["arr_num"] = (
+        df["arr_insee"].str.extract(r"751(\d{2})")[0]
+        .fillna(df["arr_libelle"].str.extract(r"(\d{1,2})")[0])
+    )
 
-    out = df.rename(columns={
-        "Libellé établissement": "nom_etablissement",
-        "Arrondissement": "arr_libelle",
-        "Code INSEE": "arr_insee",
-    })[["arr_num", "arr_insee", "arr_libelle", "nom_etablissement"]]
+    df["arr_num"] = pd.to_numeric(df["arr_num"], errors="coerce")
 
-    out.to_csv(dst, index=False)
-    print(f"[ELEMENTAIRES] OK: {len(out):,} → {dst.resolve()}")
-    return dst.resolve()
+    # Filtrage Paris (1–20)
+    df = df[df["arr_num"].between(1, 20, inclusive="both")]
+
+    # Renommage final
+    df.rename(columns={
+        "libelle": "nom_etablissement"
+    }, inplace=True)
+
+    keep = ["arr_num", "arr_insee", "arr_libelle", "nom_etablissement"]
+    df = df[keep]
+
+    # Sauvegarde
+    df.to_csv(dst_path, index=False, encoding="utf-8")
+    print(f"[ELEMENTAIRES] OK: {len(df):,} lignes → {dst_path.resolve()}")
