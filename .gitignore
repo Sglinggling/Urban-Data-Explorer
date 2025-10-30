@@ -1,0 +1,3 @@
+data/silver/*
+data/bronze/chantiers_paris.csv
+pipeline/silver/__pycache__/*
