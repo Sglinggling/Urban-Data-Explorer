@@ -1,3 +1,5 @@
-data/silver/*
-data/bronze/chantiers_paris.csv
+!data/bronze/dvf.csv
+data/bronze/*
 pipeline/silver/__pycache__/*
+pipeline/clean/__pycache__/*
+pipeline/collect/__pycache__/*
