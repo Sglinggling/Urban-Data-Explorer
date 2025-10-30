@@ -2,9 +2,10 @@ import concurrent.futures
 import os
 from pathlib import Path
 
-import pipeline.collect.collect_data as p_collect
+import pipeline.collect.collect_data as p_collect 
 from pipeline.clean.dvf_to_silver import clean_dvf
 from pipeline.clean.logements_sociaux_to_silver import clean_logements_sociaux
+from pipeline.clean.dechet_alimentaires_to_silver import clean_dechets_silver
 
 ROOT = Path(__file__).parent.resolve()
 BRONZE_DIR = ROOT / "data" / "bronze"
@@ -40,6 +41,7 @@ def main():
     clean_dvf("data/bronze/dvf.csv", "data/silver/transactions_residentiel.csv")
     clean_logements_sociaux(BRONZE_DIR / "logement_sociaux.csv",
                         SILVER_DIR / "logements_sociaux_programmes.csv")
+    clean_dechets_silver()
     # Nettoyage / création silver
     #p_clean.build_silver_dvf()
     #p_clean.build_silver_logements_sociaux()
