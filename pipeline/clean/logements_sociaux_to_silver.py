@@ -1,34 +1,22 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import argparse
 from pathlib import Path
+
 import pandas as pd
 
-def guess_read_csv(path: Path) -> pd.DataFrame:
+
+def clean_logements_sociaux(src_path, dst_path):
+    src_path = Path(src_path)
+    dst_path = Path(dst_path)
+    dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"[LS] Lecture: {src_path}")
     try:
-        df = pd.read_csv(path, sep=";", dtype=str, low_memory=False)
-        # Si les colonnes FR ne sont pas là, retente avec ','
+        df = pd.read_csv(src_path, sep=";", dtype=str, low_memory=False)
         if not any(c in df.columns for c in ["Année du financement - agrément", "Code postal"]):
-            df = pd.read_csv(path, sep=",", dtype=str, low_memory=False)
-        return df
+            df = pd.read_csv(src_path, sep=",", dtype=str, low_memory=False)
     except Exception as e:
-        raise RuntimeError(f"Lecture CSV échouée pour {path}: {e}")
+        raise RuntimeError(f"Lecture CSV échouée pour {src_path}: {e}")
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--in", dest="src", default="../../data/bronze/logements-sociaux-finances-a-paris.csv")
-    ap.add_argument("--out", dest="dst", default="../../data/silver/logements_sociaux_programmes.csv")
-    args = ap.parse_args()
-
-    src = Path(args.src)
-    dst = Path(args.dst)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-
-    print(f"[LS] Lecture: {src}")
-    df = guess_read_csv(src).dropna(how="all")
-
-    # Normalisation noms (sans agrégats/KPI)
+    # Normalisation noms
     rename = {
         "Année du financement - agrément": "annee",
         "Arrondissement": "arrondissement",
@@ -46,7 +34,7 @@ def main():
     }
     df.rename(columns={k: v for k, v in rename.items() if k in df.columns}, inplace=True)
 
-    # Paris uniquement (si dispo)
+    # Filtrage Paris
     if "code_postal" in df.columns:
         mask_paris = df["code_postal"].astype(str).str.match(r"750(0[1-9]|1[0-9]|20)", na=False)
         df = df[mask_paris]
@@ -63,8 +51,5 @@ def main():
         "nb_total","nb_plai","nb_plus","nb_plus_cd","nb_pls"
     ] if c in df.columns]
 
-    df[keep].to_csv(dst, index=False)
-    print(f"[LS] OK: {len(df):,} lignes → {dst.resolve()}")
-
-if __name__ == "__main__":
-    main()
+    df[keep].to_csv(dst_path, index=False)
+    print(f"[LS] OK: {len(df):,} lignes → {dst_path.resolve()}")

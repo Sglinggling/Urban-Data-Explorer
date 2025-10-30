@@ -1,8 +1,14 @@
 import concurrent.futures
 import os
+from pathlib import Path
 
 import pipeline.collect.collect_data as p_collect
+from pipeline.clean.dvf_to_silver import clean_dvf
+from pipeline.clean.logements_sociaux_to_silver import clean_logements_sociaux
 
+ROOT = Path(__file__).parent.resolve()
+BRONZE_DIR = ROOT / "data" / "bronze"
+SILVER_DIR = ROOT / "data" / "silver"
 #import pipeline.clean.clean_data_to_silver_dvf as p_clean  # Décommenter si nécessaire
 
 # Dictionnaire nom de fichier → URL
@@ -31,7 +37,9 @@ def main():
     # Téléchargement parallèle
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(lambda args: collect_if_missing(*args), urls.items())
-
+    clean_dvf("data/bronze/dvf.csv", "data/silver/transactions_residentiel.csv")
+    clean_logements_sociaux(BRONZE_DIR / "logement_sociaux.csv",
+                        SILVER_DIR / "logements_sociaux_programmes.csv")
     # Nettoyage / création silver
     #p_clean.build_silver_dvf()
     #p_clean.build_silver_logements_sociaux()
