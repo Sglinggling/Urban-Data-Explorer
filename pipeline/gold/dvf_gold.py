@@ -24,8 +24,8 @@ def compute_prix_m2_median(
     df = df.dropna(subset=["valeur_fonciere", "surface_reelle_bati", "annee"])
 
     # Prix au m²
-    df["prix_m2"] = df["valeur_fonciere"] / df["surface_reelle_bati"]
-
+    df["prix_m2"] = round(df["valeur_fonciere"] / df["surface_reelle_bati"],0).astype(int)
+    
     # Prix médian par arrondissement
     prix_median = (
         df.groupby(["annee", "arrondissement"])["prix_m2"]
@@ -55,21 +55,26 @@ def compute_variation_prix_m2(
     # Calcul de la variation par arrondissement
     df["prix_m2_prec"] = df.groupby("arrondissement")["prix_m2"].shift(1)
 
-    df["variation_%"] = (
+    # Convertir prix_m2_prec en int avant de dropna
+    df["prix_m2_prec"] = df["prix_m2_prec"].round(0)
+
+    df["variation_%"] = round((
         (df["prix_m2"] - df["prix_m2_prec"])
         / df["prix_m2_prec"] * 100
-    )
+    ), 2)
 
     # Garder uniquement années comparables
     df_var = df.dropna(subset=["prix_m2_prec"])
+    
+    # Convertir prix_m2_prec et prix_m2 en int seulement après dropna
+    df_var["prix_m2_prec"] = df_var["prix_m2_prec"].round(0).astype(int)
+    df_var["prix_m2"] = df_var["prix_m2"].round(0).astype(int)
 
     Path(dst).parent.mkdir(parents=True, exist_ok=True)
     df_var.to_csv(dst, index=False)
 
     print(f"[OK] Variation % du prix → {dst}")
     return df_var
-
-
 
 # -----------------------------
 # Exécution optionnelle

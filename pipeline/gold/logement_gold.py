@@ -45,12 +45,13 @@ def compute_typologie_parc(
     # Calcul des pourcentages
     for col in ['studio','T2','T3plus']:
         if col in df_count.columns:
-            df_count[f'part_{col}_pct'] = df_count[col] / df_count['nb_logements_total'] * 100
+            df_count[f'part_{col}_pct'] = round(df_count[col] / df_count['nb_logements_total'] * 100,2)
         else:
             df_count[f'part_{col}_pct'] = 0.0
 
     df_out = df_count.reset_index()[['annee','arrondissement','part_studio_pct','part_T2_pct','part_T3plus_pct']]
 
+    df_out['annee'] = df_out['annee'].astype(int)
     # Supprimer les lignes où toutes les colonnes de pourcentage sont vides
     df_out = df_out.dropna(subset=['part_studio_pct','part_T2_pct','part_T3plus_pct'], how='all')
     Path(dst).parent.mkdir(parents=True, exist_ok=True)

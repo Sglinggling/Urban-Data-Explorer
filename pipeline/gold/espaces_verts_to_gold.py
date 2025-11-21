@@ -6,7 +6,9 @@
 
 
 from pathlib import Path
+
 import pandas as pd
+
 
 def espaces_verts_silver_to_gold(
     src_path="data/silver/espace_vert_clean.csv",
@@ -28,6 +30,9 @@ def espaces_verts_silver_to_gold(
         nb_espaces_verts=("id_espace_vert", "count"),
         surface_totale_m2=("surface_m2", "sum")
     ).reset_index()
+    
+    group["surface_totale_m2"] = group["surface_totale_m2"].round(0).astype(int)
+
 
     # Création du dossier Gold si manquant
     Path(dst_path).parent.mkdir(parents=True, exist_ok=True)
