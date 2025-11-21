@@ -3,3 +3,4 @@ data/bronze/*
 pipeline/silver/__pycache__/*
 pipeline/clean/__pycache__/*
 pipeline/collect/__pycache__/*
+api/venv/*
