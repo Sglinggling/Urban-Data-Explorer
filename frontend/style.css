@@ -1,0 +1,355 @@
+:root {
+  --bg: #060914;
+  --bg-strong: #0a1124;
+  --bg-card: #0c142a;
+  --bg-soft: #0f1c3c;
+  --accent: #fbbf24;
+  --accent-2: #38bdf8;
+  --text: #e5e7eb;
+  --muted: #9ba9c2;
+  --border: #132138;
+  --radius: 16px;
+  --shadow: 0 26px 60px rgba(3, 7, 18, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(56, 189, 248, 0.12) 0, rgba(6, 9, 20, 0) 30%),
+    radial-gradient(circle at 76% 8%, rgba(251, 191, 36, 0.12) 0, rgba(6, 9, 20, 0) 26%),
+    linear-gradient(135deg, #060914 0%, #05070f 100%);
+  color: var(--text);
+}
+
+.page {
+  max-width: 1400px;
+  margin: 0 auto 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card {
+  background: linear-gradient(140deg, rgba(12, 20, 42, 0.95), rgba(15, 28, 60, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- hero --- */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.hero h1 {
+  margin: 6px 0 8px;
+  font-size: 2.15rem;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-2);
+  margin: 0;
+}
+
+.lede {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.pill strong {
+  color: var(--accent);
+}
+
+.hero-pane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.hero-kpi {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.hero-kpi label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.hero-kpi .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* --- layout général --- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.filters .card-title,
+.section-header .title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* --- filtres --- */
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+select,
+input[type="number"] {
+  width: 100%;
+  background: var(--bg-strong);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 9px 10px;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.15s ease, box-shadow 0.15s ease;
+}
+
+select:focus,
+input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+}
+
+.buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+/* --- boutons --- */
+
+button {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #0f1a34, #0c1327);
+  color: var(--text);
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease-out;
+}
+
+button:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.22);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* --- colonne principale --- */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* KPI */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.kpi-card {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.kpi-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.kpi-value {
+  margin: 6px 0 4px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.kpi-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* --- charts --- */
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.chart-card {
+  /* Ancienne ligne : min-height: 320px; */
+  /* NOUVEAU : On définit une hauteur pour contraindre le conteneur */
+  height: 360px;
+}
+
+/* NOUVEAU : On donne une plus grande hauteur à la première grille (timelines) */
+.main > .chart-grid:first-child .chart-card {
+  height: 420px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.tag {
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  color: #7dd3fc;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+/* canvas : occupe la largeur, hauteur gérée par l'attribut HTML */
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+/* comparaison A/B */
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+/* JSON debug */
+
+.json-wrapper {
+  margin-top: 8px;
+}
+
+.json-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 12px;
+}
+
+#result {
+  background: #0b1226;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre;
+  color: var(--muted);
+}
+
+small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* --- responsive --- */
+
+@media (max-width: 1080px) {
+  body {
+    padding: 18px;
+  }
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

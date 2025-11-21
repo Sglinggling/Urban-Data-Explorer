@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Urban Data Explorer - Dashboard GOLD</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="card hero">
+      <div>
+        <p class="eyebrow">Projet Data - Gold</p>
+        <h1>Urban Data Explorer</h1>
+        <p class="lede">
+          Analyse immersive du marché immobilier parisien : prix/m², logements sociaux, typologie, espaces verts et
+          établissements scolaires, arrondissement par arrondissement.
+        </p>
+        <div class="chips">
+          <span class="pill"><strong>API</strong> FastAPI · Swagger OK</span>
+          <span class="pill">Carte & timeline interactives</span>
+          <span class="pill">Comparaison A/B</span>
+        </div>
+      </div>
+      <div class="hero-pane">
+        <div class="hero-kpi">
+          <label>Arrondissement actif</label>
+          <div class="value" id="badge-selection">Tous</div>
+        </div>
+        <div class="hero-kpi">
+          <label>Dernière mise à jour</label>
+          <div class="value" id="last-update">-</div>
+        </div>
+        <div class="hero-kpi">
+          <label>Source</label>
+          <div class="value">Zone GOLD</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="layout">
+      <aside class="card filters">
+        <div class="section-header">
+          <div class="title">Filtres & actions</div>
+          <div class="tag">Pilotage global</div>
+        </div>
+        <p class="muted" style="margin: 0 0 10px;">
+          Choisis un arrondissement et les millésimes pour rafraîchir les graphiques. Les boutons déclenchent les appels API.
+        </p>
+        <div class="filter-grid">
+          <div>
+            <label for="arr-select">Arrondissement</label>
+            <select id="arr-select">
+              <option value="">Tous les arrondissements</option>
+            </select>
+          </div>
+          <div>
+            <label for="annee-input">Année (prix / m²)</label>
+            <input type="number" id="annee-input" placeholder="2022" />
+          </div>
+          <div>
+            <label for="typologie-annee">Année (typologie)</label>
+            <input type="number" id="typologie-annee" placeholder="2022" />
+          </div>
+        </div>
+        <div class="buttons-grid" style="margin-top: 4px;">
+          <button id="btn-prix">Prix / m²</button>
+          <button id="btn-timeline">Timeline</button>
+          <button id="btn-typologie">Typologie</button>
+          <button id="btn-logements-sociaux">Logements sociaux</button>
+          <button id="btn-espaces-verts">Espaces verts</button>
+          <button id="btn-ecoles">Écoles</button>
+          <button id="btn-abribacs">Abribacs / PAVDA</button> </div>
+      </aside>
+
+      <section class="main">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <h3>Prix médian</h3>
+            <div class="kpi-value" id="kpi-price">-</div>
+            <p class="kpi-note">Appui sur l'année sélectionnée</p>
+          </div>
+          <div class="kpi-card">
+            <h3>Logements sociaux</h3>
+            <div class="kpi-value" id="kpi-logements">-</div>
+            <p class="kpi-note">Part du parc pour l'arrondissement</p>
+          </div>
+          <div class="kpi-card">
+            <h3>Espaces verts</h3>
+            <div class="kpi-value" id="kpi-verts">-</div>
+            <p class="kpi-note">Capacité / superficie</p>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Timeline prix/m²</div>
+              <div class="tag">Évolution</div>
+            </div>
+            <canvas id="timelineChart" width="900" height="340"></canvas>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Comparaison A/B</div>
+              <div class="tag">Mode comparaison</div>
+            </div>
+            <div class="compare-grid">
+              <div>
+                <label for="arr-compare-a">Arrondissement A</label>
+                <select id="arr-compare-a"></select>
+              </div>
+              <div>
+                <label for="arr-compare-b">Arrondissement B</label>
+                <select id="arr-compare-b"></select>
+              </div>
+            </div>
+            <button id="btn-compare">Comparer les timelines</button>
+            <canvas id="compareTimelineChart" width="900" height="340"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Typologie du parc</div>
+              <div class="tag">Répartition</div>
+            </div>
+            <canvas id="typologieChart" width="600" height="260"></canvas>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Logements sociaux</div>
+              <div class="tag">% du parc</div>
+            </div>
+            <canvas id="logementsChart" width="600" height="260"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Espaces verts</div>
+              <div class="tag">Couverture</div>
+            </div>
+            <canvas id="vertsChart" width="600" height="260"></canvas>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Établissements scolaires</div>
+              <div class="tag">Maternelles / élémentaires / collèges</div>
+            </div>
+            <canvas id="ecolesChart" width="600" height="260"></canvas>
+          </div>
+        </div>
+        
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Abribacs / PAVDA</div>
+              <div class="tag">Points de collecte</div>
+            </div>
+            <canvas id="abribacsChart" width="600" height="260"></canvas>
+          </div>
+        </div>
+        </section>
+    </section>
+
+    <section class="card json-wrapper">
+      <div class="json-header">
+        <h2 class="title" style="margin: 0;">Dernière réponse API</h2>
+        <small>Debug : dernière réponse brute renvoyée par le backend.</small>
+      </div>
+      <pre id="result"></pre>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
