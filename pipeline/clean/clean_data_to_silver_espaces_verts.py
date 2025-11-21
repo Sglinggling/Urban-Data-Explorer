@@ -26,20 +26,36 @@ def clean_espaces_verts(
     if missing:
         raise ValueError(f"Colonnes manquantes: {missing}\nColonnes vues: {list(df.columns)}")
 
-    # --- Nettoyage ---
-    df = df[required].drop_duplicates(subset=["nsq_espace_vert"])
+    # --- Sélection et déduplication ---
+    df = df[required + ["poly_area", "surface_totale_reelle", "surface_horticole"]].drop_duplicates(
+        subset=["nsq_espace_vert"]
+    )
 
-    # Normalisation du code postal
+    # --- Normalisation du code postal ---
     df["adresse_codepostal"] = df["adresse_codepostal"].astype(str).str.extract(r"(\d{5})")
     df = df.dropna(subset=["adresse_codepostal"])
 
-    # Extraction du numéro d’arrondissement
+    # --- Extraction du numéro d’arrondissement ---
     df["arr_num"] = df["adresse_codepostal"].apply(
         lambda cp: int(cp[-2:]) if isinstance(cp, str) and cp.startswith("75") else None
     )
     df = df[df["arr_num"].between(1, 20)]
 
-    # Renommage clair
+    # --- Normalisation des colonnes de surface ---
+    surface_cols = ["surface_totale_reelle", "poly_area", "surface_horticole"]
+
+    # Convertir en float
+    for col in surface_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Surface finale
+    df["surface_m2"] = (
+        df["surface_totale_reelle"]
+        .fillna(df["poly_area"])
+        .fillna(df["surface_horticole"])
+    )
+
+    # --- Renommage clair ---
     df.rename(columns={
         "nsq_espace_vert": "id_espace_vert",
         "nom_ev": "nom_espace_vert",
@@ -47,8 +63,15 @@ def clean_espaces_verts(
         "adresse_codepostal": "code_postal",
     }, inplace=True)
 
-    # Colonnes finales
-    keep = ["id_espace_vert", "nom_espace_vert", "type_espace_vert", "code_postal", "arr_num"]
+    # --- Colonnes finales ---
+    keep = [
+        "id_espace_vert",
+        "nom_espace_vert",
+        "type_espace_vert",
+        "code_postal",
+        "arr_num",
+        "surface_m2"
+    ]
     df = df[keep]
 
     # --- Sauvegarde ---

@@ -1,5 +1,8 @@
 !data/bronze/dvf.csv
 data/bronze/*
+data/gold/*
+data/silver/*
 pipeline/silver/__pycache__/*
+pipeline/gold/__pycache__/*
 pipeline/clean/__pycache__/*
 pipeline/collect/__pycache__/*
