@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import argparse
 import json
@@ -9,7 +7,7 @@ from pathlib import Path
 import pandas as pd  # type: ignore
 
 
-# ---------- Utils lecture & parsing ----------
+# Utils lecture & parsing
 def guess_read_csv(path: Path) -> pd.DataFrame:
     try:
         df = pd.read_csv(path, sep=";", dtype=str, low_memory=False)
@@ -50,7 +48,7 @@ def parse_lon_lat_from_geojson(s: str):
         return (lon, lat)
     return (None, None)
 
-# ---------- Fonction principale ----------
+# Fonction principale
 def clean_dechets_silver(
     src: str | Path = "data/bronze/abribac_dechets_alimentaires.csv",
     dst: str | Path = "data/silver/abribac_dechets_alimentaires.csv",
@@ -65,7 +63,7 @@ def clean_dechets_silver(
     df = guess_read_csv(src).dropna(how="all")
     df.columns = [c.strip() for c in df.columns]  # trims entêtes
 
-    # --- RENOMMAGE ROBUSTE ---
+    # RENOMMAGE
     rename = {
         # anciens jeux "éducation" (si jamais)
         "Type d'établissement - Année scolaire": "type_annee_scolaire",
@@ -91,7 +89,7 @@ def clean_dechets_silver(
     }
     df.rename(columns={k: v for k, v in rename.items() if k in df.columns}, inplace=True)
 
-    # --- ARRONDISSEMENT ---
+    # ARRONDISSEMENT
     # 1) depuis code_insee (751xx)
     arr_num = None
     if "code_insee" in df.columns:
@@ -112,7 +110,7 @@ def clean_dechets_silver(
             lambda x: f"{int(x):02d}" if pd.notna(x) and 1 <= int(x) <= 20 else None
         )
 
-    # --- LON/LAT (priorité geo_point_2d, fallback geo_shape) ---
+    # LON/LAT (priorité geo_point_2d, fallback geo_shape)
     if "geo_point_2d" in df.columns:
         lon_lat_point = df["geo_point_2d"].apply(parse_lon_lat_from_point).tolist()
     else:
@@ -127,12 +125,12 @@ def clean_dechets_silver(
     df["longitude"] = [t[0] for t in lon_lat]
     df["latitude"]  = [t[1] for t in lon_lat]
 
-    # --- STABILISER LE SCHÉMA (cols vides si absentes) ---
+    # STABILISER LE SCHÉMA (cols vides si absentes)
     for col in ["arrondissement", "arrondissement_str"]:
         if col not in df.columns:
             df[col] = pd.NA
 
-    # --- COLONNES FINALES (compat + PAVDA utiles) ---
+    # COLONNES FINALES (compat + PAVDA utiles)
     all_cols = [
         # standard "éducation" si présents
         #"type_annee_scolaire","etablissement","annee_scolaire",

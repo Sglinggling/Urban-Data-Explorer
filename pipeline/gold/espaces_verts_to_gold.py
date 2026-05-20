@@ -11,7 +11,7 @@ import pandas as pd
 
 
 def espaces_verts_silver_to_gold(
-    src_path="data/silver/espace_vert_clean.csv",
+    src_path="data/silver/espaces_verts_clean.csv",
     dst_path="data/gold/espaces_verts_by_arr.csv"
 ):
     print("[GOLD ESPACES VERTS] Génération des indicateurs…")

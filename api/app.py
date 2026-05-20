@@ -4,27 +4,22 @@ from . import endpoints # Assurez-vous d'importer votre routeur
 
 app = FastAPI(title="Urban Data Explorer API")
 
-# --- Configuration CORS ---
-# L'origine à autoriser est celle où votre page HTML s'exécute.
-# Si vous ouvrez le fichier index.html directement, l'origine est "null" ou "file://".
-# Si vous utilisez un serveur de développement (souvent sur le port 8000), elle sera "http://localhost:port".
-
 origins = [
-    # Si vous ouvrez index.html via un serveur de développement local :
-    "http://localhost",
-    "http://localhost:8080", # Exemple de port souvent utilisé
+    "http://localhost:5500",       # frontend Docker (nginx)
+    "http://127.0.0.1:5500",
+    "http://localhost:8080",       # dev local classique
     "http://127.0.0.1:8080",
-    
-    # Pour autoriser n'importe quelle origine pendant le développement (moins sûr, mais simple)
-    "*" 
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "null",                  
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Liste des origines autorisées (ex: "http://localhost:8080")
-    allow_credentials=True,
-    allow_methods=["*"], # Autorise toutes les méthodes (GET, POST, etc.)
-    allow_headers=["*"], # Autorise tous les headers
+    allow_origins=origins,
+    allow_credentials=False,       # pas de cookies/sessions
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Inclusion des routes

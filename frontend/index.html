@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
 
+  <!-- MapLibre GL JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.css" />
+
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
@@ -43,13 +46,14 @@
     </header>
 
     <section class="layout">
+      <!-- ═══════════════════════════════════ ASIDE FILTRES ═══════════════════════════════════ -->
       <aside class="card filters">
         <div class="section-header">
           <div class="title">Filtres & actions</div>
           <div class="tag">Pilotage global</div>
         </div>
         <p class="muted" style="margin: 0 0 10px;">
-          Choisis un arrondissement et les millésimes pour rafraîchir les graphiques. Les boutons déclenchent les appels API.
+          Choisis un arrondissement et les millésimes pour rafraîchir les graphiques.
         </p>
         <div class="filter-grid">
           <div>
@@ -74,10 +78,104 @@
           <button id="btn-logements-sociaux">Logements sociaux</button>
           <button id="btn-espaces-verts">Espaces verts</button>
           <button id="btn-ecoles">Écoles</button>
-          <button id="btn-abribacs">Abribacs / PAVDA</button> </div>
+          <button id="btn-abribacs">Abribacs / PAVDA</button>
+        </div>
+
+        <!-- ─── Contrôles carte ─── -->
+        <hr class="filter-sep" />
+
+        <div class="section-header" style="margin: 4px 0 10px;">
+          <span class="title" style="font-size:0.95rem;">Carte choroplèthe</span>
+        </div>
+
+        <div>
+          <label for="map-indicator">Indicateur</label>
+          <select id="map-indicator">
+            <option value="prix_m2">Prix médian / m²</option>
+            <option value="variation_pct">Variation prix / m²</option>
+            <option value="logements_sociaux_pct">Part logements sociaux</option>
+            <option value="part_studio_pct">Part studios</option>
+            <option value="part_T2_pct">Part T2</option>
+            <option value="part_T3plus_pct">Part T3+</option>
+            <option value="nb_total_ecoles">Nb total écoles</option>
+            <option value="surface_ev">Surface espaces verts</option>
+            <option value="nb_abribacs">Nb abribacs / PAVDA</option>
+          </select>
+        </div>
+
+        <div id="year-control" style="margin-top:12px;">
+          <div class="year-row">
+            <label style="margin:0;">Année : <strong id="year-display">2024</strong></label>
+            <button id="btn-play-map" class="btn-small" title="Lancer animation">▶</button>
+          </div>
+          <input type="range" id="map-year-slider" class="range-slider"
+                 min="2020" max="2025" step="1" value="2024" />
+          <div class="range-ticks">
+            <span>2020</span><span>2022</span><span>2024</span><span>2025</span>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label>Couches de points</label>
+          <div class="layer-toggles">
+            <label class="toggle-lbl">
+              <input type="checkbox" id="toggle-maternelles" checked />
+              <span class="dot dot-pink"></span> Maternelles
+            </label>
+            <label class="toggle-lbl">
+              <input type="checkbox" id="toggle-elementaires" checked />
+              <span class="dot dot-orange"></span> Élémentaires
+            </label>
+            <label class="toggle-lbl">
+              <input type="checkbox" id="toggle-colleges" checked />
+              <span class="dot dot-purple"></span> Collèges
+            </label>
+            <label class="toggle-lbl">
+              <input type="checkbox" id="toggle-abribacs" checked />
+              <span class="dot dot-teal"></span> Abribacs
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-compare-mode" style="margin-top:14px;width:100%;">
+          ⚖ Mode comparaison
+        </button>
       </aside>
 
+      <!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
       <section class="main">
+
+        <!-- ─── Carte interactive ─── -->
+        <div class="card map-card">
+          <div class="section-header">
+            <div class="title" id="map-section-title">Carte — Prix médian / m²</div>
+            <div class="tag" id="map-year-tag">2024</div>
+          </div>
+
+          <div id="map-compare-banner" class="compare-banner hidden">
+            ⚖ Mode comparaison — cliquez sur 2 arrondissements pour les comparer
+            <button id="btn-exit-compare" class="btn-small">✕ Quitter</button>
+          </div>
+
+          <div class="map-wrapper">
+            <div id="map"></div>
+            <div id="map-legend" class="map-legend"></div>
+          </div>
+        </div>
+
+        <!-- ─── Panneau comparaison ─── -->
+        <div id="comparison-panel" class="card hidden">
+          <div class="section-header">
+            <div class="title">Comparaison arrondissements</div>
+            <button id="btn-close-compare" class="btn-small">✕ Fermer</button>
+          </div>
+          <div class="comp-grid">
+            <div id="compare-col-a"></div>
+            <div id="compare-col-b"></div>
+          </div>
+        </div>
+
+        <!-- ─── KPIs ─── -->
         <div class="kpi-grid">
           <div class="kpi-card">
             <h3>Prix médian</h3>
@@ -96,13 +194,16 @@
           </div>
         </div>
 
+        <!-- ─── Timeline prix + comparaison A/B ─── -->
         <div class="chart-grid">
           <div class="card chart-card">
             <div class="section-header">
               <div class="title">Timeline prix/m²</div>
               <div class="tag">Évolution</div>
             </div>
-            <canvas id="timelineChart" width="900" height="340"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="timelineChart"></canvas>
+            </div>
           </div>
 
           <div class="card chart-card">
@@ -121,17 +222,22 @@
               </div>
             </div>
             <button id="btn-compare">Comparer les timelines</button>
-            <canvas id="compareTimelineChart" width="900" height="340"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="compareTimelineChart"></canvas>
+            </div>
           </div>
         </div>
 
+        <!-- ─── Typologie + Logements sociaux ─── -->
         <div class="chart-grid">
           <div class="card chart-card">
             <div class="section-header">
               <div class="title">Typologie du parc</div>
               <div class="tag">Répartition</div>
             </div>
-            <canvas id="typologieChart" width="600" height="260"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="typologieChart"></canvas>
+            </div>
           </div>
 
           <div class="card chart-card">
@@ -139,17 +245,22 @@
               <div class="title">Logements sociaux</div>
               <div class="tag">% du parc</div>
             </div>
-            <canvas id="logementsChart" width="600" height="260"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="logementsChart"></canvas>
+            </div>
           </div>
         </div>
 
+        <!-- ─── Espaces verts + Écoles ─── -->
         <div class="chart-grid">
           <div class="card chart-card">
             <div class="section-header">
               <div class="title">Espaces verts</div>
               <div class="tag">Couverture</div>
             </div>
-            <canvas id="vertsChart" width="600" height="260"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="vertsChart"></canvas>
+            </div>
           </div>
 
           <div class="card chart-card">
@@ -157,25 +268,32 @@
               <div class="title">Établissements scolaires</div>
               <div class="tag">Maternelles / élémentaires / collèges</div>
             </div>
-            <canvas id="ecolesChart" width="600" height="260"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="ecolesChart"></canvas>
+            </div>
           </div>
         </div>
-        
+
+        <!-- ─── Abribacs ─── -->
         <div class="chart-grid">
           <div class="card chart-card">
             <div class="section-header">
               <div class="title">Abribacs / PAVDA</div>
               <div class="tag">Points de collecte</div>
             </div>
-            <canvas id="abribacsChart" width="600" height="260"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="abribacsChart"></canvas>
+            </div>
           </div>
         </div>
-        </section>
+
+      </section>
     </section>
 
-    <section class="card json-wrapper">
+    <!-- ─── Debug JSON ─── -->
+    <section class="card json-wrapper" style="display:none">
       <div class="json-header">
-        <h2 class="title" style="margin: 0;">Dernière réponse API</h2>
+        <h2 class="title" style="margin:0;">Dernière réponse API</h2>
         <small>Debug : dernière réponse brute renvoyée par le backend.</small>
       </div>
       <pre id="result"></pre>
@@ -183,6 +301,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- MapLibre GL JS — doit être chargé AVANT map.js et main.js -->
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.js"></script>
+  <script src="js/map.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

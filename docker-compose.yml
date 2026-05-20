@@ -1,0 +1,31 @@
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    volumes:
+      - ./data:/app/data
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5500:80"
+    depends_on:
+      - api
+    restart: unless-stopped

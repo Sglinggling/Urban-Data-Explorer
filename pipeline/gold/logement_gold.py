@@ -6,15 +6,39 @@ from pathlib import Path
 import pandas as pd
 
 
-def compute_logements_sociaux_pct(social_csv, total_csv, dst="data/gold/logements_sociaux_pct.csv"):
-    df_social = pd.read_csv(social_csv)
-    df_total = pd.read_csv(total_csv)
+def compute_logements_sociaux_pct(
+    logements_sociaux_src="data/silver/logements_sociaux_programmes.csv",
+    logements_residentiel_src="data/silver/transactions_residentiel.csv",
+    dst="data/gold/logements_sociaux_pct.csv",
+):
+    df_social = pd.read_csv(logements_sociaux_src)
+    df_trans = pd.read_csv(logements_residentiel_src)
 
-    df = df_social.merge(df_total, on="arrondissement", how="left")
-    df["logements_sociaux_pct"] = df["logements_sociaux"] / df["logements_totaux"] * 100
+    # Somme des unités sociales programmées par arrondissement (toutes années confondues)
+    for col in ("nb_plai", "nb_plus", "nb_pls"):
+        df_social[col] = pd.to_numeric(df_social[col], errors="coerce").fillna(0)
+    df_social["nb_total_social"] = df_social["nb_plai"] + df_social["nb_plus"] + df_social["nb_pls"]
+    social_by_arr = (
+        df_social.groupby("arrondissement")["nb_total_social"]
+        .sum()
+        .reset_index()
+        .rename(columns={"nb_total_social": "logements_sociaux"})
+    )
+
+    # Nombre de transactions résidentielles par arrondissement (proxy du parc)
+    total_by_arr = (
+        df_trans.groupby("arrondissement")
+        .size()
+        .reset_index(name="logements_totaux")
+    )
+
+    df = social_by_arr.merge(total_by_arr, on="arrondissement", how="inner")
+    df["logements_sociaux_pct"] = (
+        df["logements_sociaux"] / df["logements_totaux"] * 100
+    ).round(2)
 
     Path(dst).parent.mkdir(parents=True, exist_ok=True)
-    df_out = df[["arrondissement","logements_sociaux_pct"]]
+    df_out = df[["arrondissement", "logements_sociaux_pct"]].sort_values("arrondissement")
     df_out.to_csv(dst, index=False)
     print(f"[OK] Part de logements sociaux → {dst}")
     return df_out

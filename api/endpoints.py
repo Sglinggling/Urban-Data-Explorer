@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 # On crée un router pour regrouper tous les endpoints de l'API
 router = APIRouter()
 
-# -------------------- CHEMINS DATA -------------------- #
+# CHEMINS DATA #
 
 ROOT = Path(__file__).resolve().parents[1]  # dossier Urban-Data-Explorer
 GOLD = ROOT / "data" / "gold"
@@ -21,12 +21,12 @@ def load_csv_gold(filename: str) -> pd.DataFrame:
     if not path.exists():
         raise HTTPException(
             status_code=500,
-            detail=f"Fichier GOLD introuvable : {path}. Vérifie que le pipeline GOLD a bien tourné.",
+            detail=f"Fichier GOLD introuvable : {path}.",
         )
     return pd.read_csv(path)
 
 
-# -------------------- Endpoint de test -------------------- #
+# Endpoint de test  #
 
 @router.get("/ping")
 def ping():
@@ -36,7 +36,7 @@ def ping():
     return {"status": "ok", "message": "API /api/ping répond bien"}
 
 
-# ==================== INDICATEUR 1 : PRIX / m² ==================== #
+# INDICATEUR 1 : PRIX / m² #
 
 @router.get("/arrondissements")
 def list_arrondissements():
@@ -74,7 +74,7 @@ def get_prix(
             detail="Aucune donnée pour ces filtres (annee / arrondissement).",
         )
 
-    # On renomme prix_m2 -> prix_m2_median pour que ce soit clair côté front
+    # On renomme prix_m2 -> prix_m2_median
     df = df.rename(columns={"prix_m2": "prix_m2_median"})
     df = df.sort_values(["annee", "arrondissement"])
 
@@ -153,7 +153,7 @@ def comparaison(
     }
 
 
-# ==================== INDICATEUR 2 : LOGEMENTS SOCIAUX ==================== #
+# INDICATEUR 2 : LOGEMENTS SOCIAUX #
 
 @router.get("/logements_sociaux")
 def logements_sociaux(
@@ -176,7 +176,7 @@ def logements_sociaux(
     return df.to_dict(orient="records")
 
 
-# ==================== INDICATEUR 3 : TYPOLOGIE DU PARC ==================== #
+# INDICATEUR 3 : TYPOLOGIE DU PARC #
 
 @router.get("/typologie")
 def typologie(
@@ -207,7 +207,7 @@ def typologie(
     return df.to_dict(orient="records")
 
 
-# ==================== INDICATEUR 4 : ESPACES VERTS ==================== #
+# INDICATEUR 4 : ESPACES VERTS #
 
 @router.get("/espaces_verts")
 def espaces_verts(
@@ -234,7 +234,7 @@ def espaces_verts(
     return df.to_dict(orient="records")
 
 
-# ==================== INDICATEUR 5 : ÉTABLISSEMENTS SCOLAIRES ==================== #
+# INDICATEUR 5 : ÉTABLISSEMENTS SCOLAIRES #
 
 @router.get("/etablissements_scolaires")
 def etablissements_scolaires(
@@ -247,23 +247,11 @@ def etablissements_scolaires(
     - nb de collèges
     - total d'écoles
     """
-    df = load_csv_gold("gold_ecole.csv")
+    df = load_csv_gold("education_par_arrondissement.csv")
 
     # arr_num -> arrondissement
     df["arrondissement"] = df["arr_num"].astype("Int64")
     df = df.drop(columns=["arr_num"])
-
-    # On harmonise les noms de colonnes
-    df = df.rename(
-        columns={
-            "nb_Maternelle": "nb_maternelles",
-            "nb_Elementaire": "nb_elementaires",
-            "nb_Colleges": "nb_colleges",
-        }
-    )
-    df["nb_total_ecoles"] = (
-        df["nb_maternelles"] + df["nb_elementaires"] + df["nb_colleges"]
-    )
 
     if arrondissement is not None:
         df = df[df["arrondissement"] == arrondissement]
@@ -277,7 +265,7 @@ def etablissements_scolaires(
     return df.to_dict(orient="records")
 
 
-# ==================== INDICATEUR 6 : ABRIBACS / PAVDA ==================== #
+# INDICATEUR 6 : ABRIBACS / PAVDA #
 
 @router.get("/abribacs")
 def abribacs(

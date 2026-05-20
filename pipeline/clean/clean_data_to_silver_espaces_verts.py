@@ -12,7 +12,6 @@ def clean_espaces_verts(
 
     print(f"[ESPACES_VERTS] Lecture: {src}")
 
-    # --- Lecture robuste ---
     try:
         df = pd.read_csv(src, sep=";", dtype=str, low_memory=False)
         if len(df.columns) == 1:  # Mauvais séparateur -> relecture avec ','
@@ -20,28 +19,28 @@ def clean_espaces_verts(
     except Exception as e:
         raise RuntimeError(f"Erreur de lecture pour {src}: {e}")
 
-    # --- Vérification des colonnes ---
+    # Vérification des colonnes
     required = ["nsq_espace_vert", "nom_ev", "type_ev", "adresse_codepostal"]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Colonnes manquantes: {missing}\nColonnes vues: {list(df.columns)}")
 
-    # --- Sélection et déduplication ---
+    # Sélection et déduplication
     df = df[required + ["poly_area", "surface_totale_reelle", "surface_horticole"]].drop_duplicates(
         subset=["nsq_espace_vert"]
     )
 
-    # --- Normalisation du code postal ---
+    # Normalisation du code postal
     df["adresse_codepostal"] = df["adresse_codepostal"].astype(str).str.extract(r"(\d{5})")
     df = df.dropna(subset=["adresse_codepostal"])
 
-    # --- Extraction du numéro d’arrondissement ---
+    # Extraction du numéro d’arrondissement
     df["arr_num"] = df["adresse_codepostal"].apply(
         lambda cp: int(cp[-2:]) if isinstance(cp, str) and cp.startswith("75") else None
     )
     df = df[df["arr_num"].between(1, 20)]
 
-    # --- Normalisation des colonnes de surface ---
+    # Normalisation des colonnes de surface 
     surface_cols = ["surface_totale_reelle", "poly_area", "surface_horticole"]
 
     # Convertir en float
@@ -63,7 +62,7 @@ def clean_espaces_verts(
         "adresse_codepostal": "code_postal",
     }, inplace=True)
 
-    # --- Colonnes finales ---
+    # Colonnes finales
     keep = [
         "id_espace_vert",
         "nom_espace_vert",
@@ -74,7 +73,7 @@ def clean_espaces_verts(
     ]
     df = df[keep]
 
-    # --- Sauvegarde ---
+    # Sauvegarde
     df.to_csv(dst, index=False, encoding="utf-8")
     print(f"[ESPACES_VERTS] OK: {len(df):,} lignes → {dst.resolve()}")
 

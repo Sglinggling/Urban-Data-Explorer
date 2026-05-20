@@ -1,13 +1,12 @@
 console.log("main.js chargé");
 
-// rendu HD des graphes
 if (window.Chart) {
   Chart.defaults.devicePixelRatio = 2;
 }
 
 const API_BASE_URL = "http://localhost:8000/api";
 
-// ---------- client API générique (TRANSFÉRÉ DE api_client.js) ----------
+// client API générique
 async function apiGet(path, params = {}) {
   const url = new URL(API_BASE_URL + path);
 
@@ -31,7 +30,7 @@ async function apiGet(path, params = {}) {
   return resp.json();
 }
 
-// fonctions spécialisées (pour chaque endpoint)
+// fonctions pour chaque endpoint
 function fetchArrondissements() {
   return apiGet("/arrondissements");
 }
@@ -57,12 +56,9 @@ function fetchAbribacs(arrondissement) {
   return apiGet("/abribacs", { arrondissement });
 }
 
-// =====================================================
-// POINT D'ENTRÉE : LA LOGIQUE D'APPLICATION COMMENCE ICI
-// =====================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- DOM ---
+  // DOM 
   const arrSelect = document.getElementById("arr-select");
   const arrCompareA = document.getElementById("arr-compare-a");
   const arrCompareB = document.getElementById("arr-compare-b");
@@ -93,7 +89,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const badgeSelection = document.getElementById("badge-selection");
   const lastUpdate = document.getElementById("last-update");
 
-  // --- charts instances ---
+  // charts instances 
   let timelineChart = null;
   let compareChart = null;
   let logementsChart = null;
@@ -129,8 +125,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // utils
   function stringify(data) {
-    resultPre.textContent = JSON.stringify(data, null, 2);
+    if (resultPre) resultPre.textContent = JSON.stringify(data, null, 2);
   }
+
+  function arrLabel(num) {
+    return num === 1 ? "1er" : `${num}e`;
+  }
+
+  const LABELS = {
+    part_studio_pct:       'Studios',
+    part_T2_pct:           'T2',
+    part_T3plus_pct:       'T3 et plus',
+    logements_sociaux_pct: 'Part des logements sociaux',
+    nb_espaces_verts:      "Nombre d'espaces verts",
+    surface_totale_m2:     'Surface totale (m²)',
+    nb_total_ecoles:       "Nombre d'établissements",
+    nb_maternelles:        'Maternelles',
+    nb_elementaires:       'Élémentaires',
+    nb_colleges:           'Collèges',
+    nb_abribacs:           'Points de collecte (Abribacs)',
+    prix_m2_median:        'Prix médian au m²',
+    variation_pct:         'Variation du prix (%)',
+  };
+  function prettyLabel(key) { return LABELS[key] || key; }
 
   function formatNumber(value, opts = {}) {
     if (value === undefined || value === null || Number.isNaN(value)) return "–";
@@ -141,7 +158,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateStatus() {
-    const arrText = arrSelect.value ? `${arrSelect.value}e` : "Tous";
+    const v = arrSelect.value;
+    const arrText = v ? arrLabel(parseInt(v, 10)) : "Tous";
     badgeSelection.textContent = arrText;
     const now = new Date();
     lastUpdate.textContent = now.toLocaleString("fr-FR", {
@@ -155,7 +173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     arrondissements.forEach((arr) => {
       const opt = document.createElement("option");
       opt.value = arr;
-      opt.textContent = `${arr}e`;
+      opt.textContent = arrLabel(arr);
       select.appendChild(opt);
     });
   }
@@ -174,9 +192,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   updateStatus();
 
-  // =====================================================
   //   FONCTIONS DE CHARGEMENT
-  // =====================================================
 
   async function loadPrix() {
     const arr = arrSelect.value || undefined;
@@ -234,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: `Prix/m² médian - ${arr}e`,
+              label: `Prix/m² médian - ${arrLabel(parseInt(arr, 10))}`,
               data: values,
               tension: 0.25,
               borderColor: "#f59e0b",
@@ -295,7 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const labels = keys;
+      const labels = keys.map(prettyLabel);
       const values = keys.map((k) => row[k]);
 
       if (typologieChart) typologieChart.destroy();
@@ -306,7 +322,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: `Typologie ${arr}e en ${annee}`,
+              label: `Typologie ${arrLabel(parseInt(arr, 10))} en ${annee}`,
               data: values,
               backgroundColor: [
                 "#22d3ee",
@@ -319,7 +335,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             },
           ],
         },
-        options: chartDefaults,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: chartDefaults.plugins.tooltip,
+            legend: {
+              labels: {
+                color: "#e5e7eb",
+                generateLabels(chart) {
+                  const d = chart.data;
+                  const total = d.datasets[0].data.reduce((s, v) => s + (v || 0), 0);
+                  return d.labels.map((lbl, i) => ({
+                    text: total > 0
+                      ? `${lbl} — ${((d.datasets[0].data[i] / total) * 100).toFixed(1)} %`
+                      : lbl,
+                    fillStyle: d.datasets[0].backgroundColor[i],
+                    strokeStyle: d.datasets[0].backgroundColor[i],
+                    fontColor: '#e5e7eb',
+                    lineWidth: 0,
+                    hidden: false,
+                    index: i,
+                  }));
+                },
+              },
+            },
+          },
+        },
       });
     } catch (e) {
       console.error(e);
@@ -351,7 +393,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       const valueKey = numericKeys[0];
 
-      const labels = data.map((row) => row.arrondissement);
+      const labels = data.map((row) => arrLabel(row.arrondissement));
       const values = data.map((row) => row[valueKey]);
 
       if (logementsChart) logementsChart.destroy();
@@ -362,7 +404,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: `${valueKey} (%)`,
+              label: `${prettyLabel(valueKey)} (%)`,
               data: values,
               backgroundColor: "rgba(34, 211, 238, 0.35)",
               borderColor: "#22d3ee",
@@ -379,7 +421,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             },
             y: {
               ...chartDefaults.scales.y,
-              title: { display: true, text: valueKey, color: "#cbd5e1" },
+              title: { display: true, text: "Part (%)", color: "#cbd5e1" },
             },
           },
         },
@@ -428,7 +470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       const valueKey = numericKeys[0];
 
-      const labels = data.map((row) => row.arrondissement);
+      const labels = data.map((row) => arrLabel(row.arrondissement));
       const values = data.map((row) => row[valueKey]);
 
       if (vertsChart) vertsChart.destroy();
@@ -439,7 +481,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: valueKey,
+              label: prettyLabel(valueKey),
               data: values,
               backgroundColor: "rgba(132, 204, 22, 0.35)",
               borderColor: "#84cc16",
@@ -456,7 +498,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             },
             y: {
               ...chartDefaults.scales.y,
-              title: { display: true, text: valueKey, color: "#cbd5e1" },
+              title: { display: true, text: prettyLabel(valueKey), color: "#cbd5e1" },
             },
           },
         },
@@ -466,10 +508,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const selectedRow = data.find(
           (row) => Number(row.arrondissement) === Number(arr)
         );
-        const firstVal = selectedRow ? selectedRow[valueKey] : null;
+        const kpiVal = selectedRow
+          ? (selectedRow.surface_totale_m2 ?? selectedRow[valueKey] ?? null)
+          : null;
         kpiVerts.textContent =
-          firstVal !== undefined && firstVal !== null
-            ? formatNumber(firstVal)
+          kpiVal !== undefined && kpiVal !== null
+            ? `${formatNumber(kpiVal, { maximumFractionDigits: 0 })} m²`
             : "N/A";
       } else {
         kpiVerts.textContent = "–";
@@ -493,7 +537,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const labels = data.map((row) => row.arrondissement);
+      const labels = data.map((row) => arrLabel(row.arrondissement));
       const values = data.map((row) => row.nb_total_ecoles ?? 0);
 
       if (ecolesChart) ecolesChart.destroy();
@@ -504,7 +548,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: "Nombre total d'écoles",
+              label: prettyLabel("nb_total_ecoles"),
               data: values,
               backgroundColor: "rgba(251, 113, 133, 0.35)",
               borderColor: "#fb7185",
@@ -521,7 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             },
             y: {
               ...chartDefaults.scales.y,
-              title: { display: true, text: "Établissements", color: "#cbd5e1" },
+              title: { display: true, text: "Nombre d'établissements", color: "#cbd5e1" },
             },
           },
         },
@@ -553,7 +597,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       const valueKey = numericKeys[0];
 
-      const labels = data.map((row) => row.arrondissement);
+      const labels = data.map((row) => arrLabel(row.arrondissement));
       const values = data.map((row) => row[valueKey]);
 
       if (abribacsChart) abribacsChart.destroy();
@@ -564,7 +608,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: "Nombre d'Abribacs (PAVDA)",
+              label: "Nombre de points de collecte",
               data: values,
               backgroundColor: "rgba(192, 132, 252, 0.35)",
               borderColor: "#c084fc",
@@ -581,7 +625,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             },
             y: {
               ...chartDefaults.scales.y,
-              title: { display: true, text: "Points de collecte", color: "#cbd5e1" },
+              title: { display: true, text: "Nombre de points de collecte", color: "#cbd5e1" },
             },
           },
         },
@@ -616,7 +660,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           ...timelineA.map((d) => d.annee),
           ...timelineB.map((d) => d.annee),
         ]).values()
-      ).sort();
+      ).sort((a, b) => a - b);
 
       const datasetA = labels.map((annee) => {
         const item = timelineA.find((d) => d.annee === annee);
@@ -635,19 +679,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           labels,
           datasets: [
             {
-              label: `Arr. ${arrA}`,
+              label: `${arrLabel(parseInt(arrA, 10))} arrondissement`,
               data: datasetA,
               tension: 0.25,
               borderColor: "#22d3ee",
               backgroundColor: "rgba(34, 211, 238, 0.18)",
+              borderWidth: 2,
               fill: false,
             },
             {
-              label: `Arr. ${arrB}`,
+              label: `${arrLabel(parseInt(arrB, 10))} arrondissement`,
               data: datasetB,
               tension: 0.25,
               borderColor: "#f59e0b",
               backgroundColor: "rgba(245, 158, 11, 0.18)",
+              borderWidth: 2,
               fill: false,
             },
           ],
@@ -673,12 +719,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-
-  // =====================================================
   //   LISTENERS (Les branchements finaux)
-  // =====================================================
 
-  // Événements des boutons (clic)
+  // Événements des boutons
   btnPrix.addEventListener("click", loadPrix);
   btnTimeline.addEventListener("click", () => {
     if (!arrSelect.value) {
@@ -698,7 +741,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Événements des filtres (change)
   
-  // FIX: L'année pour le prix déclenche la mise à jour
+  // L'année pour le prix déclenche la mise à jour
   anneeInput.addEventListener("change", loadPrix); 
   
   // L'année pour la typologie déclenche la mise à jour
@@ -718,4 +761,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadEcoles();
     loadAbribacs();
   });
+
+  // Bridge carte → graphiques : appelé par map.js au clic sur un arrondissement
+  window.onMapArrondissementClick = (arrNum) => {
+    arrSelect.value = String(arrNum);
+    arrSelect.dispatchEvent(new Event("change"));
+  };
+
+  // Chaque clic sur un bouton sidebar met aussi à jour #map-indicator et
+  // déclenche le change listener de map.js (mapSetupControls).
+  const SIDEBAR_MAP_INDICATORS = {
+    'btn-prix':              'prix_m2',
+    'btn-timeline':          'variation_pct',
+    'btn-typologie':         'part_T3plus_pct',
+    'btn-logements-sociaux': 'logements_sociaux_pct',
+    'btn-espaces-verts':     'surface_ev',
+    'btn-ecoles':            'nb_total_ecoles',
+    'btn-abribacs':          'nb_abribacs',
+  };
+
+  const allSidebarBtns = Object.keys(SIDEBAR_MAP_INDICATORS)
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+
+  function setSidebarActive(activeId) {
+    allSidebarBtns.forEach((b) => {
+      b.classList.toggle('btn-active', b.id === activeId);
+    });
+  }
+
+  Object.entries(SIDEBAR_MAP_INDICATORS).forEach(([btnId, mapKey]) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const indSel = document.getElementById('map-indicator');
+      if (indSel) {
+        indSel.value = mapKey;
+        indSel.dispatchEvent(new Event('change'));
+      }
+      setSidebarActive(btnId);
+      console.log('[sidebar] indicateur carte →', mapKey);
+    });
+  });
+
+  // Initialisation de la carte (map.js chargé avant main.js dans le HTML)
+  if (typeof initMap === "function") initMap();
 });

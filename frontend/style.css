@@ -45,8 +45,6 @@ body {
   overflow: hidden;
 }
 
-/* --- hero --- */
-
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
@@ -122,7 +120,7 @@ body {
   color: #f8fafc;
 }
 
-/* --- layout général --- */
+/* layout général */
 
 .layout {
   display: grid;
@@ -143,7 +141,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* --- filtres --- */
+/* filtres  */
 
 .filter-grid {
   display: grid;
@@ -184,7 +182,7 @@ input[type="number"]:focus {
   gap: 8px;
 }
 
-/* --- boutons --- */
+/* boutons */
 
 button {
   border-radius: 12px;
@@ -211,7 +209,7 @@ button:active {
   transform: translateY(0);
 }
 
-/* --- colonne principale --- */
+/* colonne principale */
 
 .main {
   display: flex;
@@ -252,7 +250,7 @@ button:active {
   color: var(--muted);
 }
 
-/* --- charts --- */
+/* charts */
 
 .chart-grid {
   display: grid;
@@ -261,14 +259,16 @@ button:active {
 }
 
 .chart-card {
-  /* Ancienne ligne : min-height: 320px; */
-  /* NOUVEAU : On définit une hauteur pour contraindre le conteneur */
-  height: 360px;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
 }
 
-/* NOUVEAU : On donne une plus grande hauteur à la première grille (timelines) */
-.main > .chart-grid:first-child .chart-card {
-  height: 420px;
+/* Conteneur Chart.js : hauteur fixe = ce que Chart.js utilise pour le rendu */
+.chart-wrapper {
+  position: relative;
+  height: 260px;
+  flex-shrink: 0;
 }
 
 .section-header {
@@ -289,11 +289,14 @@ button:active {
   white-space: nowrap;
 }
 
-/* canvas : occupe la largeur, hauteur gérée par l'attribut HTML */
+/* canvas : laisser Chart.js gérer les dimensions, width 100% dans le wrapper */
 canvas {
-  width: 100% !important;
-  height: auto !important;
   display: block;
+}
+
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* comparaison A/B */
@@ -337,7 +340,7 @@ small {
   color: var(--muted);
 }
 
-/* --- responsive --- */
+/* responsive */
 
 @media (max-width: 1080px) {
   body {
@@ -352,4 +355,356 @@ small {
   .layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* CARTE CHOROPLÈTHE — MapLibre GL JS */
+
+/* Aside scrollable quand le contenu dépasse */
+.filters.card {
+  overflow-y: auto;
+  max-height: calc(100vh - 100px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Carte principal */
+.map-card {
+  overflow: visible;
+}
+
+.map-wrapper {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+#map {
+  height: 520px;
+  width: 100%;
+  display: block;
+}
+
+/* Légende overlay */
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 260px;
+  font-family: inherit;
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.map-legend__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.map-legend__gradient {
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.map-legend__scale {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+
+.map-legend__tick {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-legend__tick:nth-child(2) {
+  align-items: center;
+}
+
+.map-legend__tick:nth-child(3) {
+  align-items: flex-end;
+}
+
+.map-legend__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.map-legend__value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+}
+
+/* Popup MapLibre */
+.maplibregl-popup-content {
+  background: #0c142a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+  color: var(--text) !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #0c142a !important;
+}
+
+.map-popup {
+  padding: 10px 13px;
+  min-width: 210px;
+}
+
+.pop-title {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pop-main {
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.pop-main strong {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.pop-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pop-stats div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  gap: 8px;
+}
+
+.pop-stats span { color: var(--muted); }
+.pop-stats b    { color: var(--text); font-weight: 600; }
+
+.pop-hint {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 0.75rem;
+  color: var(--accent-2);
+  text-align: center;
+}
+
+/* Popup points */
+.point-popup {
+  padding: 8px 12px;
+}
+
+.point-popup .pop-title { margin-bottom: 3px; }
+.point-popup strong { color: var(--accent); }
+
+/* Bannière mode comparaison */
+.compare-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--accent-2);
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+/* Panneau comparaison */
+.comp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.comp-arr-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.comp-arr-card h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.comp-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.83rem;
+  gap: 8px;
+}
+
+.comp-stat:last-child { border-bottom: none; }
+.comp-stat span { color: var(--muted); flex-shrink: 0; }
+.comp-stat b    { color: var(--text); font-weight: 600; text-align: right; }
+
+/* Contrôles carte dans le aside */
+.filter-sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.year-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
+}
+
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-card);
+}
+
+.range-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Toggles couches */
+.layer-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.toggle-lbl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  margin: 0;
+  padding: 3px 0;
+}
+
+.toggle-lbl input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-pink   { background: #f472b6; }
+.dot-orange { background: #fb923c; }
+.dot-purple { background: #c084fc; }
+.dot-teal   { background: #34d399; }
+
+/* Boutons petits */
+.btn-small {
+  padding: 4px 9px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+/* État actif (mode comparaison) */
+button.btn-active {
+  border-color: var(--accent-2) !important;
+  color: var(--accent-2) !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Utilitaire */
+.hidden {
+  display: none !important;
+}
+
+/* Responsive carte */
+@media (max-width: 900px) {
+  #map { height: 380px; }
+  .comp-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  #map { height: 300px; }
+  .map-legend { display: none; }
 }
