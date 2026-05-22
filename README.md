@@ -12,7 +12,7 @@ docker compose up --build
 
 Au premier lancement, le service `pipeline` télécharge les données depuis opendata.paris.fr et génère les CSV Gold (5 à 10 minutes selon la connexion). Les lancements suivants sont instantanés car les données sont déjà présentes.
 
-Puis ouvre http://localhost:5500
+Puis ouvrir http://localhost:5500
 
 Pour relancer le pipeline (rafraîchir les données) :
 
