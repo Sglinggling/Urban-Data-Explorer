@@ -109,6 +109,11 @@ def main():
 
     print("Pipeline terminé, data/gold/ prêt")
 
+    # Ingestion PostgreSQL
+    from pipeline.db.load_gold_to_postgres import load_gold_to_postgres
+    load_gold_to_postgres()
+    print("Pipeline terminé, BDD PostgreSQL prête")
+
 
 if __name__ == "__main__":
     main()

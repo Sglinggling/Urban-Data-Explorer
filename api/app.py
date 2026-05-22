@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from . import endpoints # Assurez-vous d'importer votre routeur
+from . import endpoints
+from .db import engine  # initialise le pool SQLAlchemy au démarrage
 
 app = FastAPI(title="Urban Data Explorer API")
 

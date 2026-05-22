@@ -242,7 +242,6 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 10988,MAIL DU PASSAGE NAFISSA SID CARA,Décorations sur la voie publique,75019,19.0,440.0
 13090,JARDINIERES VGA DE LA PLACE DE LA PORTE DE SAINT-CLOUD,Décorations sur la voie publique,75016,16.0,
 13411,JARDINIERES DE LA RUE CAIL,Décorations sur la voie publique,75010,10.0,164.0
-13429,JARDINIERES EVQ DE LA RUE WATTIGNIES,Décorations sur la voie publique,75012,12.0,
 13449,JARDINIERES DU PASSAGE VICTOR MARCHAND,Décorations sur la voie publique,75013,13.0,
 11626,04-52,Périphérique,75014,14.0,68.0
 13121,JARDINIERES EVQ DE LA RUE DE CHARTRES,Décorations sur la voie publique,75018,18.0,59.0
@@ -359,6 +358,7 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 13347,JARDINIERES EVQ RUE MADEMOISELLE,Décorations sur la voie publique,75015,15.0,
 13089,JARDINIERES RAE  DE LA RUE EMILE LEVASSOR,Décorations sur la voie publique,75013,13.0,407.0
 13062,JARDINIERES DE LA RUE PARROT,Décorations sur la voie publique,75012,12.0,300.0
+13429,JARDINIERES EVQ DE LA RUE WATTIGNIES,Décorations sur la voie publique,75012,12.0,364.0
 13139,JARDINIERES EVQ DE LA PLACE NATIONALE,Décorations sur la voie publique,75013,13.0,
 13130,JARDINIERES EVQ DE LA RUE STEPHENSON,Décorations sur la voie publique,75018,18.0,
 13079,JADINIERES EVQ DE LA RUE DU MONT-CENIS,Décorations sur la voie publique,75018,18.0,
@@ -1215,6 +1215,7 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 13175,JARDINIERES EVQ DE LA RUE BECQUEREL,Décorations sur la voie publique,75018,18.0,
 10081,JARDIN D'AGRONOMIE TROPICALE,Promenades ouvertes,75012,12.0,82086.0
 13339,JARDINIERES RAE DE LA RUE JEAN QUARRE,Décorations sur la voie publique,75019,19.0,120.0
+12168,JARDINIERES DE L'AVENUE DAUMESNIL,Décorations sur la voie publique,75012,12.0,1839.0
 13157,JARDINIERES EVQ DE LA RUE DE LA SOLIDARITE,Décorations sur la voie publique,75019,19.0,
 11138,JARDINIERE VERTICALE DU 9 RUE DE MAZAGRAN,Murs végétalisés,75010,10.0,3.0
 10700,JARDINIERES DE LA RUE FRAGONARD,Décorations sur la voie publique,75017,17.0,760.0
@@ -1232,7 +1233,6 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 13385,JARDINIERES EVQ DE LA RUE DE  MAUBEUGE ( ENTRE RUE A.PARE ET RUE DU FBG POISSONNIERE),Décorations sur la voie publique,75010,10.0,78.0
 919,CIMETIERE DU NORD DIT DE MONTMARTRE,Cimetières,75018,18.0,104800.0
 13399,JARDINIERES DE LA PLACE JAN KARSKI,Décorations sur la voie publique,75010,10.0,181.0
-13426,JARDINIERES RAE DE LA RUE DE GRAVELLE,Décorations sur la voie publique,75012,12.0,
 13406,JARDINIERES VERTICALES 12/16 RUE GRANGE AUX BELLES,Décorations sur la voie publique,75010,10.0,4.0
 13445,JARDINIERES CARREFOUR RUNGIS-MOUCHEZ,Décorations sur la voie publique,75013,13.0,
 11195,JARDINIERE VERTICALE DU 29 ALLEE DARIUS MILHAUD,Murs végétalisés,75019,19.0,97.0
@@ -1720,7 +1720,6 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 12088,JARDINIERE VERTICALE DU SQUARE SAINT-LAMBERT 2,Murs végétalisés,75015,15.0,60.0
 12171,JARDINIERES DE LA RUE MADELEINE REBERIOUX,Décorations sur la voie publique,75018,18.0,150.0
 12929,JARDINIERE DE LA RUE JEAN BAPTISTE PIGALLE,Décorations sur la voie publique,75009,9.0,9.0
-12168,JARDINIERES DE L'AVENUE DAUMESNIL,Décorations sur la voie publique,75012,12.0,800.0
 12174,JARDINIERES DE LA RUE DE LA GARE,Décorations sur la voie publique,75019,19.0,200.0
 13127,JARDINET DE LA RUE LEGOUVE,Jardinets décoratifs,75010,10.0,38.0
 13433,JARDINIERES RAE  DE LA RUE VAUCANSON,Décorations sur la voie publique,75003,3.0,270.0
@@ -2397,6 +2396,7 @@ id_espace_vert,nom_espace_vert,type_espace_vert,code_postal,arr_num,surface_m2
 13166,JARDINIERES EVQ DE LA RUE DE SEINE,Décorations sur la voie publique,75006,6.0,
 73,SQUARE SAMUEL ROUSSEAU,Promenades ouvertes,75007,7.0,2047.0
 874,SQUARE HENRI CADIOU,Promenades ouvertes,75013,13.0,2567.0
+13426,JARDINIERES RAE DE LA RUE DE GRAVELLE,Décorations sur la voie publique,75012,12.0,363.0
 13360,PROMENADE PC 14 - GENERAL LECLERC - RUE DU PERE CORENTIN,Jardins privatifs,75014,14.0,2156.0
 13148,JARDINIERES EVQ DE LA RUE DE LA GAITE,Décorations sur la voie publique,75014,14.0,
 13030,JARDINS DES CHAMPS ELYSEES- CARRE DE L ELYSEE,Promenades ouvertes,75008,8.0,10305.0

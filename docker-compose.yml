@@ -1,10 +1,33 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: urban_data
+      POSTGRES_USER: urban
+      POSTGRES_PASSWORD: urban_pwd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pipeline/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urban -d urban_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   pipeline:
     build:
       context: .
       dockerfile: pipeline/Dockerfile
     volumes:
       - ./data:/app/data
+    environment:
+      DATABASE_URL: postgresql://urban:urban_pwd@postgres:5432/urban_data
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: "no"
 
   api:
@@ -15,9 +38,13 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data:ro
+    environment:
+      DATABASE_URL: postgresql://urban:urban_pwd@postgres:5432/urban_data
     depends_on:
       pipeline:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -29,3 +56,6 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+
+volumes:
+  postgres_data:

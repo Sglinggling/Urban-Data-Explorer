@@ -1,51 +1,33 @@
-from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy import text
 
-# On crée un router pour regrouper tous les endpoints de l'API
+from .db import engine
+
 router = APIRouter()
 
-# CHEMINS DATA #
 
-ROOT = Path(__file__).resolve().parents[1]  # dossier Urban-Data-Explorer
-GOLD = ROOT / "data" / "gold"
+def _read_sql(query: str, params: dict = None) -> pd.DataFrame:
+    with engine.connect() as conn:
+        result = conn.execute(text(query), params or {})
+        return pd.DataFrame(result.fetchall(), columns=list(result.keys()))
 
-
-def load_csv_gold(filename: str) -> pd.DataFrame:
-    """
-    Charge un CSV depuis la zone GOLD. Lève une erreur HTTP 500 si le fichier est manquant.
-    """
-    path = GOLD / filename
-    if not path.exists():
-        raise HTTPException(
-            status_code=500,
-            detail=f"Fichier GOLD introuvable : {path}.",
-        )
-    return pd.read_csv(path)
-
-
-# Endpoint de test  #
 
 @router.get("/ping")
 def ping():
-    """
-    Petit endpoint de test : /api/ping
-    """
     return {"status": "ok", "message": "API /api/ping répond bien"}
 
 
-# INDICATEUR 1 : PRIX / m² #
+# PRIX / m²
 
 @router.get("/arrondissements")
 def list_arrondissements():
-    """
-    Renvoie la liste des arrondissements présents dans les données GOLD de prix.
-    """
-    df = load_csv_gold("prix_m2_median.csv")
-    arrs = sorted(df["arrondissement"].dropna().unique().tolist())
-    return {"arrondissements": arrs}
+    df = _read_sql(
+        "SELECT DISTINCT arr_num AS arrondissement FROM prix_m2_median ORDER BY arr_num"
+    )
+    return {"arrondissements": df["arrondissement"].tolist()}
 
 
 @router.get("/prix")
@@ -53,31 +35,25 @@ def get_prix(
     annee: Optional[int] = Query(None, description="Année (ex: 2020)"),
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20)"),
 ):
-    """
-    Retourne le prix/m² médian par arrondissement et par année (zone GOLD).
-
-    - Sans filtre : tous les arrondissements, toutes les années.
-    - Avec annee : tous les arrondissements pour cette année.
-    - Avec arrondissement : toutes les années pour cet arrondissement.
-    """
-    df = load_csv_gold("prix_m2_median.csv")
-
+    query = (
+        "SELECT annee, arr_num AS arrondissement, prix_m2_median"
+        " FROM prix_m2_median WHERE 1=1"
+    )
+    params = {}
     if annee is not None:
-        df = df[df["annee"] == annee]
-
+        query += " AND annee = :annee"
+        params["annee"] = annee
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
+    query += " ORDER BY annee, arr_num"
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée pour ces filtres (annee / arrondissement).",
         )
-
-    # On renomme prix_m2 -> prix_m2_median
-    df = df.rename(columns={"prix_m2": "prix_m2_median"})
-    df = df.sort_values(["annee", "arrondissement"])
-
     return df.to_dict(orient="records")
 
 
@@ -85,30 +61,26 @@ def get_prix(
 def get_timeline(
     arr: int = Query(..., description="Numéro d'arrondissement (1-20)"),
 ):
+    query = """
+        SELECT
+            v.annee,
+            pm.prix_m2_median,
+            pm_prev.prix_m2_median AS prix_m2_prec_median,
+            v.variation_prix_m2    AS variation_pct
+        FROM variation_prix_m2 v
+        JOIN prix_m2_median pm
+          ON pm.arr_num = v.arr_num AND pm.annee = v.annee
+        LEFT JOIN prix_m2_median pm_prev
+          ON pm_prev.arr_num = v.arr_num AND pm_prev.annee = v.annee - 1
+        WHERE v.arr_num = :arr
+        ORDER BY v.annee
     """
-    Retourne l'évolution du prix/m² (et variation %) pour un arrondissement,
-    année par année, à partir de la table GOLD de variation.
-    """
-    df = load_csv_gold("variation_prix_m2.csv")
-
-    df = df[df["arrondissement"] == arr].copy()
-
+    df = _read_sql(query, {"arr": arr})
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail=f"Aucune donnée pour l'arrondissement {arr}.",
         )
-
-    # On renomme pour avoir des clés propres côté frontend
-    df = df.rename(
-        columns={
-            "prix_m2": "prix_m2_median",
-            "prix_m2_prec": "prix_m2_prec_median",
-            "variation_%": "variation_pct",
-        }
-    )
-    df = df.sort_values("annee")
-
     return {
         "arrondissement": arr,
         "timeline": df[["annee", "prix_m2_median", "prix_m2_prec_median", "variation_pct"]].to_dict(
@@ -123,28 +95,22 @@ def comparaison(
     arr2: int = Query(..., description="Deuxième arrondissement (1-20)"),
     annee: Optional[int] = Query(None, description="Année (facultative, ex: 2022)"),
 ):
-    """
-    Compare deux arrondissements sur le prix/m² médian (zone GOLD).
-
-    - Si 'annee' est précisée : comparaison pour cette année uniquement.
-    - Sinon : renvoie la série de toutes les années pour les deux arrondissements.
-    """
-    df = load_csv_gold("prix_m2_median.csv")
-
-    df = df[df["arrondissement"].isin([arr1, arr2])]
-
+    query = (
+        "SELECT annee, arr_num AS arrondissement, prix_m2_median"
+        " FROM prix_m2_median WHERE arr_num IN (:a1, :a2)"
+    )
+    params = {"a1": arr1, "a2": arr2}
     if annee is not None:
-        df = df[df["annee"] == annee]
+        query += " AND annee = :annee"
+        params["annee"] = annee
+    query += " ORDER BY annee, arr_num"
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée pour cette comparaison (arr1 / arr2 / annee).",
         )
-
-    df = df.rename(columns={"prix_m2": "prix_m2_median"})
-    df = df.sort_values(["annee", "arrondissement"])
-
     return {
         "arr1": arr1,
         "arr2": arr2,
@@ -153,26 +119,28 @@ def comparaison(
     }
 
 
-# INDICATEUR 2 : LOGEMENTS SOCIAUX #
+# LOGEMENTS SOCIAUX 
 
 @router.get("/logements_sociaux")
 def logements_sociaux(
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20, optionnel)"),
 ):
-    """
-    Part de logements sociaux (%) par arrondissement (zone GOLD).
-    """
-    df = load_csv_gold("logements_sociaux_pct.csv")
-
+    query = (
+        "SELECT arr_num AS arrondissement,"
+        "       pct_logements_sociaux AS logements_sociaux_pct"
+        " FROM logements_sociaux_pct WHERE 1=1"
+    )
+    params = {}
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée logements sociaux pour ces filtres.",
         )
-
     return df.to_dict(orient="records")
 
 
@@ -183,111 +151,101 @@ def typologie(
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20, optionnel)"),
     annee: Optional[int] = Query(None, description="Année (optionnelle)"),
 ):
+    # part_t2_pct / part_t3plus_pct sont stockés en minuscule dans PostgreSQL ;
+    # on les alias avec la casse d'origine attendue par le frontend.
+    query = """
+        SELECT annee,
+               arr_num AS arrondissement,
+               part_studio_pct,
+               part_t2_pct     AS "part_T2_pct",
+               part_t3plus_pct AS "part_T3plus_pct"
+        FROM typologie_parc WHERE 1=1
     """
-    Typologie du parc immobilier (part de studios, T2, T3+) par arrondissement et par année.
-    """
-    df = load_csv_gold("typologie_parc.csv")
-
-    # La colonne 'annee' est float dans le CSV → on la cast en int pour les filtres
-    if "annee" in df.columns:
-        df["annee"] = df["annee"].astype("Int64")
-
+    params = {}
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
-
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
     if annee is not None:
-        df = df[df["annee"] == annee]
+        query += " AND annee = :annee"
+        params["annee"] = annee
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée de typologie pour ces filtres.",
         )
-
     return df.to_dict(orient="records")
 
 
-# INDICATEUR 4 : ESPACES VERTS #
+# ESPACES VERTS
 
 @router.get("/espaces_verts")
 def espaces_verts(
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20, optionnel)"),
 ):
-    """
-    Espaces verts par arrondissement (nombre et surface totale).
-    """
-    df = load_csv_gold("espaces_verts_by_arr.csv")
-
-    # arr_num est un float dans le CSV → on le cast en int et renomme en 'arrondissement'
-    df["arrondissement"] = df["arr_num"].astype("Int64")
-    df = df.drop(columns=["arr_num"])
-
+    query = (
+        "SELECT arr_num AS arrondissement, nb_espaces_verts, surface_totale_m2"
+        " FROM espaces_verts_by_arr WHERE 1=1"
+    )
+    params = {}
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée d'espaces verts pour ces filtres.",
         )
-
     return df.to_dict(orient="records")
 
 
-# INDICATEUR 5 : ÉTABLISSEMENTS SCOLAIRES #
+# ÉTABLISSEMENTS SCOLAIRES
 
 @router.get("/etablissements_scolaires")
 def etablissements_scolaires(
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20, optionnel)"),
 ):
+    query = """
+        SELECT arr_num AS arrondissement,
+               nb_maternelles, nb_elementaires, nb_colleges, nb_total_ecoles
+        FROM education_par_arrondissement WHERE 1=1
     """
-    Établissements scolaires par arrondissement :
-    - nb de maternelles
-    - nb d'élémentaires
-    - nb de collèges
-    - total d'écoles
-    """
-    df = load_csv_gold("education_par_arrondissement.csv")
-
-    # arr_num -> arrondissement
-    df["arrondissement"] = df["arr_num"].astype("Int64")
-    df = df.drop(columns=["arr_num"])
-
+    params = {}
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée d'établissements scolaires pour ces filtres.",
         )
-
     return df.to_dict(orient="records")
 
 
-# INDICATEUR 6 : ABRIBACS / PAVDA #
+# ABRIBACS / PAVDA
 
 @router.get("/abribacs")
 def abribacs(
     arrondissement: Optional[int] = Query(None, description="Arrondissement (1-20, optionnel)"),
 ):
-    """
-    Points d'Apport Volontaire de Déchets Alimentaires (PAVDA) par arrondissement (nombre).
-    """
-    df = load_csv_gold("abribac_by_arr.csv")
-
-    # arr_num est un float dans le CSV → on le cast en int et renomme en 'arrondissement'
-    if "arr_num" in df.columns:
-        df["arrondissement"] = df["arr_num"].astype("Int64")
-        df = df.drop(columns=["arr_num"])
-
+    query = (
+        "SELECT arr_num AS arrondissement, nb_abribacs"
+        " FROM abribac_by_arr WHERE 1=1"
+    )
+    params = {}
     if arrondissement is not None:
-        df = df[df["arrondissement"] == arrondissement]
+        query += " AND arr_num = :arr"
+        params["arr"] = arrondissement
 
+    df = _read_sql(query, params)
     if df.empty:
         raise HTTPException(
             status_code=404,
             detail="Aucune donnée Abribac/PAVDA pour ces filtres.",
         )
-
     return df.to_dict(orient="records")
