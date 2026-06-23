@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Urban Data Explorer - Dashboard GOLD</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- MapLibre GL JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.css" />
+
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="card hero">
+      <div class="hero-left">
+        <h1>Urban Data Explorer</h1>
+        <p class="lede">
+          Exploration du marché immobilier parisien par arrondissement — prix au m²,
+          logements sociaux, taille des logements, espaces verts et tension immobilière.
+        </p>
+      </div>
+      <div class="hero-controls">
+        <button id="theme-toggle" class="theme-toggle" title="Changer de thème">
+          <span class="theme-icon">🌙</span>
+        </button>
+        <span class="hero-update-time" id="last-update-badge">Mise à jour : —</span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <!-- ═══════════════════════════════════ ASIDE FILTRES ═══════════════════════════════════ -->
+      <aside class="card filters">
+        <div class="sidebar-arr-block">
+          <label for="arr-select">Arrondissement</label>
+          <select id="arr-select" class="sidebar-arr-select">
+            <option value="">Tous les arrondissements</option>
+          </select>
+          <span id="badge-selection" style="display:none;">Tous</span>
+        </div>
+        <div class="section-header">
+          <div class="title">Filtres & actions</div>
+        </div>
+        <p class="muted" style="margin: 0 0 10px;">
+          Choisir l'année et l'indicateur pour rafraîchir les graphiques.
+        </p>
+        <div class="filter-grid">
+          <div>
+            <label for="annee-input">Année</label>
+            <select id="annee-input">
+              <option value="">— Toutes —</option>
+              <option value="2020">2020</option>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024" selected>2024</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+        </div>
+        <div class="buttons-grid" style="margin-top: 4px;">
+          <button id="btn-prix">Prix / m²</button>
+          <button id="btn-timeline">Timeline</button>
+          <button id="btn-typologie" data-tooltip="Cliquez pour passer à : Studios">Taille des logements</button>
+          <button id="btn-logements-sociaux">Logements sociaux</button>
+          <button id="btn-iti">Tension immobilière</button>
+          <button id="btn-iqv">Qualité de vie</button>
+          <button id="btn-iam">Activité du marché</button>
+          <button id="btn-ipr">Pression résidentielle</button>
+        </div>
+
+        <!-- ─── Contrôles carte ─── -->
+        <hr class="filter-sep" />
+
+        <div class="section-header" style="margin: 4px 0 10px;">
+          <span class="title" style="font-size:0.95rem;">Évolution dans le temps</span>
+        </div>
+
+        <div id="year-control" style="margin-top:12px;">
+          <div class="year-row">
+            <label style="margin:0;">Année : <strong id="year-display">2024</strong></label>
+            <button id="btn-play-map" class="btn-small" title="Lancer animation">▶</button>
+          </div>
+          <input type="range" id="map-year-slider" class="range-slider"
+                 min="2020" max="2025" step="1" value="2024" />
+          <div class="range-ticks">
+            <span>2020</span><span>2022</span><span>2024</span><span>2025</span>
+          </div>
+        </div>
+
+        <button id="btn-compare-mode" style="margin-top:14px;width:100%;">
+          ⚖ Mode comparaison
+        </button>
+      </aside>
+
+      <!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
+      <section class="main">
+
+        <!-- ─── KPIs ─── -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <h3>Prix médian</h3>
+            <div class="kpi-value" id="kpi-price">-</div>
+            <p class="kpi-note" id="kpi-price-note">Année sélectionnée</p>
+          </div>
+          <div class="kpi-card">
+            <h3>Logements sociaux</h3>
+            <div class="kpi-value" id="kpi-logements">-</div>
+            <p class="kpi-note" id="kpi-logements-note">Part du parc</p>
+          </div>
+          <div class="kpi-card">
+            <h3>Espaces verts</h3>
+            <div class="kpi-value" id="kpi-verts">-</div>
+            <p class="kpi-note" id="kpi-verts-note">Surface totale</p>
+          </div>
+        </div>
+
+        <!-- ─── Carte interactive ─── -->
+        <div class="card map-card">
+          <div class="section-header">
+            <div class="title" id="map-section-title">Carte — Prix médian / m²</div>
+          </div>
+
+          <div id="map-compare-banner" class="compare-banner hidden">
+            ⚖ Mode comparaison — cliquez sur 2 arrondissements pour les comparer
+            <button id="btn-exit-compare" class="btn-small">✕ Quitter</button>
+          </div>
+
+          <div class="map-wrapper">
+            <div id="map-container">
+              <div id="map"></div>
+              <div id="map-legend" class="map-legend"></div>
+            </div>
+          </div>
+          <div id="map-static-badge" class="map-static-badge hidden">
+            ℹ Cet indicateur n'évolue pas dans le temps
+          </div>
+        </div>
+
+        <!-- ─── Panneau comparaison ─── -->
+        <div id="comparison-panel" class="card hidden">
+          <div class="section-header">
+            <div class="title">Comparaison arrondissements</div>
+            <button id="btn-close-compare" class="btn-small">✕ Fermer</button>
+          </div>
+          <div class="comp-grid">
+            <div id="compare-col-a"></div>
+            <div id="compare-col-b"></div>
+          </div>
+        </div>
+
+        <!-- ─── Timeline prix + comparaison A/B ─── -->
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Timeline prix/m²</div>
+              <div class="tag">Évolution</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Comparaison A/B</div>
+              <div class="tag">Mode comparaison</div>
+            </div>
+            <div class="compare-grid">
+              <div>
+                <label for="arr-compare-a">Arrondissement A</label>
+                <select id="arr-compare-a"></select>
+              </div>
+              <div>
+                <label for="arr-compare-b">Arrondissement B</label>
+                <select id="arr-compare-b"></select>
+              </div>
+            </div>
+            <button id="btn-compare">Comparer les timelines</button>
+            <div class="chart-wrapper">
+              <canvas id="compareTimelineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Typologie + Logements sociaux ─── -->
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Typologie du parc</div>
+              <div class="tag">Répartition</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="typologieChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Logements sociaux</div>
+              <div class="tag">% du parc</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="logementsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── ITI + IQV ─── -->
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Indice de Tension Immobilière</div>
+              <div class="tag" id="iti-chart-year-tag">2024</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="itiChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Qualité de vie (IQV)</div>
+              <div class="tag" id="iqv-chart-year-tag">2024</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="iqvChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── IAM + IPR ─── -->
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Activité du marché (IAM)</div>
+              <div class="tag" id="iam-chart-year-tag">2024</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="iamChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="section-header">
+              <div class="title">Pression résidentielle (IPR)</div>
+              <div class="tag" id="ipr-chart-year-tag">2024</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="iprChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </section>
+
+    <!-- ─── Debug JSON ─── -->
+    <section class="card json-wrapper" style="display:none">
+      <div class="json-header">
+        <h2 class="title" style="margin:0;">Dernière réponse API</h2>
+        <small>Debug : dernière réponse brute renvoyée par le backend.</small>
+      </div>
+      <pre id="result"></pre>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- MapLibre GL JS — doit être chargé AVANT map.js et main.js -->
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
