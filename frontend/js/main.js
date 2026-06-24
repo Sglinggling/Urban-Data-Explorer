@@ -34,6 +34,11 @@ async function apiGet(path, params = {}) {
 function fetchArrondissements() {
   return apiGet("/arrondissements");
 }
+
+function fetchAnnees() {
+  return apiGet("/annees");
+}
+
 function fetchPrix(annee, arrondissement) {
   return apiGet("/prix", { annee, arrondissement });
 }
@@ -178,16 +183,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // ---- chargement arrondissements ----
+  function applyYearsToSelect(select, years) {
+    if (!select) return;
+    select.innerHTML = ''; 
+    years.forEach((yr) => {
+      const opt = document.createElement("option");
+      opt.value = yr;
+      opt.textContent = yr;
+      if (yr === years[years.length - 1]) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
+
+// ---- chargement arrondissements et années ----
   try {
-    const data = await fetchArrondissements();
-    const arrs = data.arrondissements || [];
+    const [dataArr, dataAnn] = await Promise.all([
+      fetchArrondissements(),
+      fetchAnnees()
+    ]);
+
+    const arrs = dataArr.arrondissements || [];
+    const annees = dataAnn.annees || [];
+
+    // Remplissage des arrondissements
     applyOptionsToSelect(arrSelect, arrs);
     applyOptionsToSelect(arrCompareA, arrs);
     applyOptionsToSelect(arrCompareB, arrs);
+
+    // Remplissage des années
+    applyYearsToSelect(anneeInput, annees);
+    applyYearsToSelect(typologieAnneeInput, annees);
   } catch (e) {
-    console.error("Erreur chargement arrondissements:", e);
-    stringify({ error: "Erreur chargement arrondissements : " + e.message });
+    console.error("Erreur chargement filtres initiaux:", e);
+    stringify({ error: "Erreur chargement filtres initiaux : " + e.message });
   }
 
   updateStatus();
@@ -644,7 +674,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("Choisis deux arrondissements pour comparer.");
       return;
     }
-
+    if (arrA === arrB) {
+      alert("Veuillez choisir deux arrondissements différents.");
+      return;
+    }
+    stringify({ info: "Chargement de la comparaison..." });
     stringify({ info: "Chargement de la comparaison..." });
     try {
       const [dataA, dataB] = await Promise.all([

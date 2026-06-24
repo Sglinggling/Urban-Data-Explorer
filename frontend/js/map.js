@@ -115,12 +115,18 @@
 
   window.initMap = async function initMap() {
     mapS.map = new maplibregl.Map({
-      container: 'map',
-      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-      center: [2.3522, 48.8566],
-      zoom: 11.3,
-      attributionControl: false,
-    });
+    container: 'map',
+    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    center: [2.3522, 48.8566],
+    zoom: 11.3,
+    attributionControl: false,
+    dragPan: false,
+    scrollZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    touchZoomRotate: false,
+    keyboard: false
+  });
 
     mapS.map.addControl(
       new maplibregl.AttributionControl({ compact: true }),

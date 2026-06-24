@@ -29,6 +29,12 @@ def list_arrondissements():
     )
     return {"arrondissements": df["arrondissement"].tolist()}
 
+@router.get("/annees")
+def list_annees():
+    df = _read_sql(
+        "SELECT DISTINCT annee FROM prix_m2_median WHERE annee IS NOT NULL ORDER BY annee"
+    )
+    return {"annees": df["annee"].tolist()}
 
 @router.get("/prix")
 def get_prix(

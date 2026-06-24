@@ -361,10 +361,12 @@ small {
 
 /* Aside scrollable quand le contenu dépasse */
 .filters.card {
-  overflow-y: auto;
+  overflow-y: visible;
   max-height: calc(100vh - 100px);
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+  max-height: none;
+  padding: 10px;
 }
 
 /* Carte principal */
