@@ -66,8 +66,8 @@ graph TD
         Charts["Graphiques Analytiques Chart.js"]
     end
 
-    Endpoints -->|Fetch API (CORS + API Key)| Map
-    Endpoints -->|Fetch API (CORS + API Key)| Charts
+    Endpoints -->|Fetch API - CORS and API Key| Map
+    Endpoints -->|Fetch API - CORS and API Key| Charts
 ```
 
 ---
